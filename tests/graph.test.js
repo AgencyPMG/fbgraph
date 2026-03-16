@@ -2,7 +2,8 @@ var graph    = require("../index")
   , FBConfig = require("./config").facebook
   , vows     = require("vows")
   , events   = require("events")
-  , assert   = require("assert");
+  , assert   = require("assert")
+  , request  = require("request");
 
 
 var testUser1      = {}
@@ -273,6 +274,104 @@ vows.describe("graph.test").addBatch({
           testUserParams.permissions.split(', ').forEach(function(permission) {
             assert.include(permissions, permission); 
           });
+        }
+      }
+    }
+  }
+}).addBatch({
+  "Hardening JSON Parsing": {
+    "When receiving a non-JSON response": {
+      "from a GET request": {
+        topic: function() {
+          var callback = this.callback;
+          var originalGet = request.get;
+
+          // Monkey-patch request.get
+          request.get = function(options, cb) {
+            var res = { headers: { 'content-type': 'text/html' } };
+            var body = '<html><body>Error</body></html>';
+            setImmediate(function() { cb(null, res, body); });
+            return { on: function() { return this; } };
+          };
+
+          graph.get('/me', function(err, res) {
+            // Restore original
+            request.get = originalGet;
+            callback(null, err);
+          });
+        },
+        "it should return an error instead of crashing": function(err, error) {
+          assert.isNotNull(error);
+          assert.equal(error.message, 'Error parsing JSON response');
+          assert.include(error.body, '<html>');
+        }
+      },
+      "from a POST request": {
+        topic: function() {
+          var callback = this.callback;
+          var originalRequestExport = require.cache[require.resolve('request')].exports;
+
+          // Mocked request function
+          var mockedRequest = function(options, cb) {
+            var res = { headers: { 'content-type': 'text/html' } };
+            var body = '<html><body>Error</body></html>';
+            setImmediate(function() { cb(null, res, body); });
+            return { on: function() { return this; } };
+          };
+          mockedRequest.get = originalRequestExport.get;
+
+          // Clear cache and swap
+          delete require.cache[require.resolve('../index')];
+          delete require.cache[require.resolve('../lib/graph')];
+          var requestPath = require.resolve('request');
+          require.cache[requestPath].exports = mockedRequest;
+
+          var newGraph = require('../index');
+
+          newGraph.post('/me', { msg: 'hi' }, function(err, res) {
+            // Restore original
+            require.cache[requestPath].exports = originalRequestExport;
+            callback(null, err);
+          });
+        },
+        "it should return an error instead of crashing": function(err, error) {
+          assert.isNotNull(error);
+          assert.equal(error.message, 'Error parsing JSON response');
+          assert.include(error.body, '<html>');
+        }
+      },
+      "from a DELETE request": {
+        topic: function() {
+          var callback = this.callback;
+          var originalRequestExport = require.cache[require.resolve('request')].exports;
+
+          // Mocked request function
+          var mockedRequest = function(options, cb) {
+            var res = { headers: { 'content-type': 'text/html' } };
+            var body = '<html><body>Error</body></html>';
+            setImmediate(function() { cb(null, res, body); });
+            return { on: function() { return this; } };
+          };
+          mockedRequest.get = originalRequestExport.get;
+
+          // Clear cache and swap
+          delete require.cache[require.resolve('../index')];
+          delete require.cache[require.resolve('../lib/graph')];
+          var requestPath = require.resolve('request');
+          require.cache[requestPath].exports = mockedRequest;
+
+          var newGraph = require('../index');
+
+          newGraph.del('/me', function(err, res) {
+            // Restore original
+            require.cache[requestPath].exports = originalRequestExport;
+            callback(null, err);
+          });
+        },
+        "it should return an error instead of crashing": function(err, error) {
+          assert.isNotNull(error);
+          assert.equal(error.message, 'Error parsing JSON response');
+          assert.include(error.body, '<html>');
         }
       }
     }
