@@ -13,11 +13,16 @@
     "email": "ocean.cris@gmail.com>"
   },
   "main": "index",
+  "scripts": {
+    "test": "jest",
+    "test:vows": "vows --spec tests/*.test.js"
+  },
   "dependencies": {
     "qs": "^6.5.0",
     "request": "^2.79.0"
   },
   "devDependencies": {
+    "jest": "^30.3.0",
     "vows": "^0.7.0"
   },
   "repository": {

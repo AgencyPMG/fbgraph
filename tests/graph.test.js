@@ -289,7 +289,7 @@ vows.describe("graph.test").addBatch({
           // Monkey-patch request.get
           request.get = function(options, cb) {
             var res = { headers: { 'content-type': 'text/html' } };
-            var body = '<html><body>Error</body></html>';
+            var body = '{ malformed json';
             setImmediate(function() { cb(null, res, body); });
             return { on: function() { return this; } };
           };
@@ -303,27 +303,58 @@ vows.describe("graph.test").addBatch({
         "it should return an error instead of crashing": function(err, error) {
           assert.isNotNull(error);
           assert.equal(error.message, 'Error parsing JSON response');
-          assert.include(error.body, '<html>');
+          assert.include(error.body, '{ malformed');
+        }
+      },
+      "from a GET request with non-JSON string": {
+        topic: function() {
+          var callback = this.callback;
+          var originalGet = request.get;
+
+          // Monkey-patch request.get returning HTML
+          request.get = function(options, cb) {
+            var res = { headers: { 'content-type': 'text/html' } };
+            var body = '<html><body>HTML Response</body></html>';
+            setImmediate(function() { cb(null, res, body); });
+            return { on: function() { return this; } };
+          };
+
+          graph.get('/me', function(err, res) {
+            request.get = originalGet;
+            callback(err, res);
+          });
+        },
+        "it should handle it gracefully without crashing": function(err, res) {
+          // Graph.end converts non-json to query or data=...
+          assert.isObject(res);
+          assert.isString(res.data);
+          assert.include(res.data, '<html>');
+          assert.isObject(res.headers);
         }
       },
       "from a POST request": {
         topic: function() {
           var callback = this.callback;
-          var originalRequestExport = require.cache[require.resolve('request')].exports;
+          var requestPath = require.resolve('request');
+          var indexPath = require.resolve('../index');
+          var graphPath = require.resolve('../lib/graph');
+          
+          var originalRequestExport = require.cache[requestPath].exports;
+          var originalIndex = require.cache[indexPath];
+          var originalGraph = require.cache[graphPath];
 
           // Mocked request function
           var mockedRequest = function(options, cb) {
             var res = { headers: { 'content-type': 'text/html' } };
-            var body = '<html><body>Error</body></html>';
+            var body = '{ malformed json';
             setImmediate(function() { cb(null, res, body); });
             return { on: function() { return this; } };
           };
           mockedRequest.get = originalRequestExport.get;
 
           // Clear cache and swap
-          delete require.cache[require.resolve('../index')];
-          delete require.cache[require.resolve('../lib/graph')];
-          var requestPath = require.resolve('request');
+          delete require.cache[indexPath];
+          delete require.cache[graphPath];
           require.cache[requestPath].exports = mockedRequest;
 
           var newGraph = require('../index');
@@ -331,33 +362,40 @@ vows.describe("graph.test").addBatch({
           newGraph.post('/me', { msg: 'hi' }, function(err, res) {
             // Restore original
             require.cache[requestPath].exports = originalRequestExport;
+            require.cache[indexPath] = originalIndex;
+            require.cache[graphPath] = originalGraph;
             callback(null, err);
           });
         },
         "it should return an error instead of crashing": function(err, error) {
           assert.isNotNull(error);
           assert.equal(error.message, 'Error parsing JSON response');
-          assert.include(error.body, '<html>');
+          assert.include(error.body, '{ malformed');
         }
       },
       "from a DELETE request": {
         topic: function() {
           var callback = this.callback;
-          var originalRequestExport = require.cache[require.resolve('request')].exports;
+          var requestPath = require.resolve('request');
+          var indexPath = require.resolve('../index');
+          var graphPath = require.resolve('../lib/graph');
+          
+          var originalRequestExport = require.cache[requestPath].exports;
+          var originalIndex = require.cache[indexPath];
+          var originalGraph = require.cache[graphPath];
 
           // Mocked request function
           var mockedRequest = function(options, cb) {
             var res = { headers: { 'content-type': 'text/html' } };
-            var body = '<html><body>Error</body></html>';
+            var body = '{ malformed json';
             setImmediate(function() { cb(null, res, body); });
             return { on: function() { return this; } };
           };
           mockedRequest.get = originalRequestExport.get;
 
           // Clear cache and swap
-          delete require.cache[require.resolve('../index')];
-          delete require.cache[require.resolve('../lib/graph')];
-          var requestPath = require.resolve('request');
+          delete require.cache[indexPath];
+          delete require.cache[graphPath];
           require.cache[requestPath].exports = mockedRequest;
 
           var newGraph = require('../index');
@@ -365,13 +403,15 @@ vows.describe("graph.test").addBatch({
           newGraph.del('/me', function(err, res) {
             // Restore original
             require.cache[requestPath].exports = originalRequestExport;
+            require.cache[indexPath] = originalIndex;
+            require.cache[graphPath] = originalGraph;
             callback(null, err);
           });
         },
         "it should return an error instead of crashing": function(err, error) {
           assert.isNotNull(error);
           assert.equal(error.message, 'Error parsing JSON response');
-          assert.include(error.body, '<html>');
+          assert.include(error.body, '{ malformed');
         }
       }
     }
