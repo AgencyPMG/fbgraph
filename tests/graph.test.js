@@ -357,15 +357,22 @@ vows.describe("graph.test").addBatch({
           delete require.cache[graphPath];
           require.cache[requestPath].exports = mockedRequest;
 
-          var newGraph = require('../index');
-
-          newGraph.post('/me', { msg: 'hi' }, function(err, res) {
-            // Restore original
+          var newGraph;
+          try {
+            newGraph = require('../index');
+            newGraph.post('/me', { msg: 'hi' }, function(err, res) {
+              // Restore original
+              require.cache[requestPath].exports = originalRequestExport;
+              require.cache[indexPath] = originalIndex;
+              require.cache[graphPath] = originalGraph;
+              callback(null, err);
+            });
+          } catch (e) {
             require.cache[requestPath].exports = originalRequestExport;
             require.cache[indexPath] = originalIndex;
             require.cache[graphPath] = originalGraph;
-            callback(null, err);
-          });
+            throw e;
+          }
         },
         "it should return an error instead of crashing": function(err, error) {
           assert.isNotNull(error);
@@ -398,15 +405,22 @@ vows.describe("graph.test").addBatch({
           delete require.cache[graphPath];
           require.cache[requestPath].exports = mockedRequest;
 
-          var newGraph = require('../index');
-
-          newGraph.del('/me', function(err, res) {
-            // Restore original
+          var newGraph;
+          try {
+            newGraph = require('../index');
+            newGraph.del('/me', function(err, res) {
+              // Restore original
+              require.cache[requestPath].exports = originalRequestExport;
+              require.cache[indexPath] = originalIndex;
+              require.cache[graphPath] = originalGraph;
+              callback(null, err);
+            });
+          } catch (e) {
             require.cache[requestPath].exports = originalRequestExport;
             require.cache[indexPath] = originalIndex;
             require.cache[graphPath] = originalGraph;
-            callback(null, err);
-          });
+            throw e;
+          }
         },
         "it should return an error instead of crashing": function(err, error) {
           assert.isNotNull(error);

@@ -14,8 +14,14 @@
   },
   "main": "index",
   "scripts": {
-    "test": "jest",
-    "test:vows": "vows --spec tests/*.test.js"
+    "test": "npm run test:vows && npm run test:jest",
+    "test:vows": "vows --spec tests/graph.test.js tests/testUsers.test.js",
+    "test:jest": "jest"
+  },
+  "jest": {
+    "testMatch": [
+      "**/tests/*.jest.test.js"
+    ]
   },
   "dependencies": {
     "qs": "^6.5.0",

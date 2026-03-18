@@ -1,17 +1,14 @@
 
-const graph = require('../index');
-const request = require('request');
-
-// Mock request
-jest.mock('request');
-
 describe('Hardening JSON Parsing (Jest)', () => {
   beforeEach(() => {
     jest.resetModules();
     jest.clearAllMocks();
+    jest.mock('request');
   });
 
   test('GET request with malformed JSON (starting with {) should return error', (done) => {
+    const graph = require('../index');
+    const request = require('request');
     const mockRes = { headers: { 'content-type': 'text/html' } };
     const mockBody = '{ malformed json';
 
@@ -33,6 +30,8 @@ describe('Hardening JSON Parsing (Jest)', () => {
   });
 
   test('GET request with non-JSON string (like HTML) should be handled by end()', (done) => {
+    const graph = require('../index');
+    const request = require('request');
     const mockRes = { headers: { 'content-type': 'text/html', 'x-test': 'header' } };
     const mockBody = '<html><body>HTML</body></html>';
 
@@ -56,6 +55,8 @@ describe('Hardening JSON Parsing (Jest)', () => {
   });
 
   test('Image response should be handled before parsing', (done) => {
+    const graph = require('../index');
+    const request = require('request');
     const mockRes = { headers: { 'content-type': 'image/jpeg' } };
     const mockBody = 'binary-data';
 
