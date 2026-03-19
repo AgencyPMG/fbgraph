@@ -280,7 +280,7 @@ vows.describe("graph.test").addBatch({
   }
 }).addBatch({
     "Hardening JSON Parsing": {
-        "When receiving a non-JSON response": {
+        "When receiving an invalid JSON response": {
             topic: function() {
                 var callback = this.callback;
                 var originalGet = request.get;
