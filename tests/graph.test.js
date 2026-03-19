@@ -2,7 +2,8 @@ var graph    = require("../index")
   , FBConfig = require("./config").facebook
   , vows     = require("vows")
   , events   = require("events")
-  , assert   = require("assert");
+  , assert   = require("assert")
+  , request  = require("request");
 
 
 var testUser1      = {}
@@ -274,6 +275,31 @@ vows.describe("graph.test").addBatch({
             assert.include(permissions, permission); 
           });
         }
+      }
+    }
+  }
+}).addBatch({
+  "Hardening JSON Parsing": {
+    "When receiving a non-JSON response": {
+      topic: function () {
+        var callback    = this.callback
+          , originalGet = request.get;
+
+        request.get = function (options, cb) {
+          var res  = { headers: { 'content-type': 'text/html' } }
+            , body = '{"foo": bar}'; // Malformed JSON
+          setImmediate(function () { cb(null, res, body); });
+          return { on: function () { return this; } };
+        };
+
+        graph.get('/me', function (err, res) {
+          request.get = originalGet;
+          callback(err, res);
+        });
+      },
+      "it should return an error instead of crashing": function (err, res) {
+        assert.isNotNull(err);
+        assert.equal(err.message, 'Error parsing json');
       }
     }
   }
