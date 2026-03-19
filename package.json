@@ -9,30 +9,31 @@
         "graph"
     ],
     "author": {
-        "name": "Cristiano Oliveira",
-        "email": "ocean.cris@gmail.com>"
+      "name": "Cristiano Oliveira",
+      "email": "ocean.cris@gmail.com"
     },
     "main": "index",
     "scripts": {
-        "test": "jest"
+      "test": "jest"
     },
     "jest": {
-        "testMatch": [
-            "**/tests/*.jest.test.js"
-        ]
+      "testMatch": [
+        "**/tests/*.jest.test.js"
+      ]
     },
     "dependencies": {
-        "qs": "^6.5.0",
-        "request": "^2.79.0"
+      "qs": "^6.5.0",
+      "request": "^2.79.0"
     },
     "devDependencies": {
-        "jest": "^30.3.0"
+      "jest": "^29.7.0"
     },
     "repository": {
-        "type": "git",
-        "url": "git://github.com/criso/fbgraph.git"
+      "type": "git",
+      "url": "git://github.com/criso/fbgraph.git"
     },
     "engines": {
-        "node": ">= 0.4.1"
+      "node": ">= 14"
     }
-}
+    }
+

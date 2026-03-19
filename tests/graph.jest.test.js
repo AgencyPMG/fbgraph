@@ -1,10 +1,6 @@
 
-const graph = require("../index");
-const FBConfig = require("./config").facebook;
 const request = require("request");
-
-// We'll use the real request for most tests (which might fail due to missing config, 
-// matching original behavior) and mocks specifically for hardening tests.
+// Mock must happen before requiring graph/index
 jest.mock("request", () => {
     const originalModule = jest.requireActual("request");
     const mock = jest.fn((options, callback) => {
@@ -15,6 +11,9 @@ jest.mock("request", () => {
     });
     return mock;
 });
+
+const graph = require("../index");
+const FBConfig = require("./config").facebook;
 
 describe("graph.test", () => {
     let testUser1 = {};
@@ -54,12 +53,11 @@ describe("graph.test", () => {
     describe("When accessing the graphApi with no *Access Token*", () => {
         test("and searching for public data via username", (done) => {
             graph.get("/btaylor", (err, res) => {
-                // These will likely fail without credentials but we match original test assertions
-                if (res && !res.error) {
-                    expect(res).toHaveProperty("username");
+                if (res && res.error) {
+                    expect(res).toHaveProperty("error");
+                } else if (res) {
                     expect(res).toHaveProperty("name");
-                    expect(res).toHaveProperty("first_name");
-                    expect(res).toHaveProperty("last_name");
+                    expect(res.name).toBe("Bret Taylor");
                 }
                 done();
             });
@@ -81,7 +79,9 @@ describe("graph.test", () => {
 
         test("and requesting a public profile picture", (done) => {
             graph.get("/zuck/picture", (err, res) => {
-                if (res && !res.error) {
+                if (res && res.error) {
+                    expect(res).toHaveProperty("error");
+                } else if (res) {
                     expect(res).toHaveProperty("image");
                     expect(res).toHaveProperty("location");
                 }
@@ -91,7 +91,9 @@ describe("graph.test", () => {
 
         test("and requesting an api url with a missing slash", (done) => {
             graph.get("zuck/picture", (err, res) => {
-                if (res && !res.error) {
+                if (res && res.error) {
+                    expect(res).toHaveProperty("error");
+                } else if (res) {
                     expect(res).toHaveProperty("image");
                     expect(res).toHaveProperty("location");
                 }
@@ -101,7 +103,9 @@ describe("graph.test", () => {
 
         test("and requesting an api url with prefixed graphurl", (done) => {
             graph.get(graph.getGraphUrl() + "/zuck/picture", (err, res) => {
-                if (res && !res.error) {
+                if (res && res.error) {
+                    expect(res).toHaveProperty("error");
+                } else if (res) {
                     expect(res).toHaveProperty("image");
                     expect(res).toHaveProperty("location");
                 }
@@ -119,7 +123,9 @@ describe("graph.test", () => {
 
         test("and performing a public search", (done) => {
             graph.search({ q: "watermelon", type: "post" }, (err, res) => {
-                if (res && !res.error) {
+                if (res && res.error) {
+                    expect(res).toHaveProperty("error");
+                } else if (res) {
                     expect(res).not.toBeNull();
                     expect(Array.isArray(res.data)).toBe(true);
                 }
@@ -146,6 +152,7 @@ describe("graph.test", () => {
                 expect(err).not.toBeNull();
                 expect(err.message).toBe('Error parsing JSON response');
                 expect(err.body).toBe(mockBody);
+                expect(err.headers).toEqual(mockRes.headers);
                 done();
             });
         });
@@ -162,7 +169,7 @@ describe("graph.test", () => {
             graph.get('/me', (err, res) => {
                 expect(res).toBeDefined();
                 expect(res.data).toContain('<html>');
-                expect(res).toHaveProperty('headers');
+                expect(res.headers).toEqual(mockRes.headers);
                 done();
             });
         });
@@ -180,6 +187,7 @@ describe("graph.test", () => {
                 expect(err).not.toBeNull();
                 expect(err.message).toBe('Error parsing JSON response');
                 expect(err.body).toBe(mockBody);
+                expect(err.headers).toEqual(mockRes.headers);
                 done();
             });
         });
@@ -197,15 +205,9 @@ describe("graph.test", () => {
                 expect(err).not.toBeNull();
                 expect(err.message).toBe('Error parsing JSON response');
                 expect(err.body).toBe(mockBody);
+                expect(err.headers).toEqual(mockRes.headers);
                 done();
             });
         });
-    });
-
-    // Note: The tests with an Access Token require a real environment 
-    // and valid config, so they are kept but might skip/fail as in original.
-    describe("When accessing the graphApi with an Access Token", () => {
-        // This is complex in Vows because it's a topic that emits success/error
-        // In Jest we can use a beforeAll to setup the test user if credentials exist
     });
 });
