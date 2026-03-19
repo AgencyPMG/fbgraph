@@ -279,30 +279,30 @@ vows.describe("graph.test").addBatch({
     }
   }
 }).addBatch({
-    "Hardening JSON Parsing": {
-        "When receiving an invalid JSON response": {
-            topic: function() {
-                var callback = this.callback;
-                var originalGet = request.get;
+  "Hardening JSON Parsing": {
+    "When receiving a non-JSON response": {
+      topic: function () {
+        var callback    = this.callback
+          , originalGet = request.get;
 
-                request.get = function(options, cb) {
-                    var res = { headers: { 'content-type': 'text/html' } };
-                    var body = '{"foo": bar}'; // Malformed JSON
-                    setImmediate(function() { cb(null, res, body); });
-                    return { on: function() { return this; } };
-                };
+        request.get = function (options, cb) {
+          var res  = { headers: { 'content-type': 'text/html' } }
+            , body = '{"foo": bar}'; // Malformed JSON
+          setImmediate(function () { cb(null, res, body); });
+          return { on: function () { return this; } };
+        };
 
-                graph.get('/me', function(err, res) {
-                    request.get = originalGet;
-                    callback(err, res);
-                });
-            },
-            "it should return an error instead of crashing": function(err, res) {
-                assert.isNotNull(err);
-                assert.equal(err.message, 'Error parsing json');
-            }
-        }
+        graph.get('/me', function (err, res) {
+          request.get = originalGet;
+          callback(err, res);
+        });
+      },
+      "it should return an error instead of crashing": function (err, res) {
+        assert.isNotNull(err);
+        assert.equal(err.message, 'Error parsing json');
+      }
     }
+  }
 }).addBatch({
   "When tests are over": {
     topic: function () {
