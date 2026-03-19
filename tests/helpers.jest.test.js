@@ -100,4 +100,54 @@ describe('Internal Helper Methods', () => {
             expect(callback).not.toHaveBeenCalled();
         });
     });
+
+    describe('parseAndValidateJSON', () => {
+        test('should parse valid JSON object', () => {
+            const body = '{"id":"me"}';
+            const result = graph.__test__.parseAndValidateJSON({}, body, false);
+            expect(result).toEqual({ id: 'me' });
+        });
+
+        test('should parse valid JSON array', () => {
+            const body = '[{"id":"me"}]';
+            const result = graph.__test__.parseAndValidateJSON({}, body, false);
+            expect(result).toEqual([{ id: 'me' }]);
+        });
+
+        test('should return null and call handleRequestError for malformed JSON', (done) => {
+            const body = '{ malformed';
+            const self = {
+                callback: (err) => {
+                    try {
+                        expect(err.message).toBe('Error parsing JSON response');
+                        expect(err.body).toBe(body);
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                }
+            };
+
+            const result = graph.__test__.parseAndValidateJSON(self, body, false);
+            expect(result).toBeNull();
+        });
+
+        test('should return raw body for non-JSON strings (like HTML)', () => {
+            const body = '<html><body></body></html>';
+            const result = graph.__test__.parseAndValidateJSON({}, body, false);
+            expect(result).toBe(body);
+        });
+
+        test('should return raw body for non-JSON strings (like query strings)', () => {
+            const body = 'access_token=123&expires=456';
+            const result = graph.__test__.parseAndValidateJSON({}, body, false);
+            expect(result).toBe(body);
+        });
+
+        test('should return raw body for boolean-like strings', () => {
+            const body = 'true';
+            const result = graph.__test__.parseAndValidateJSON({}, body, false);
+            expect(result).toBe(body);
+        });
+    });
 });
